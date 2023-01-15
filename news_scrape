@@ -1,0 +1,25 @@
+import requests
+from bs4 import BeautifulSoup
+from datetime import datetime
+
+
+url = "https://bet.hu/kib_hirek"
+response = requests.get(url)
+
+soup = BeautifulSoup(response.text, "html.parser")
+
+for li in soup.find("ul", class_="content-list-elements").find_all("li"):
+    try:
+        link = li.find('a')
+        url = "https://bet.hu" + link.get('href')
+        title = link.find('div', class_="title").text
+        issuer = link.find('h2', class_="issuer").text
+        date_string = link.find('span', class_="list-date list-attribute").text
+        date = datetime.strptime(date_string, '%Y. %b. %d. %H:%M')
+        print(title)
+        print(issuer)
+        print(date)
+        print(url)
+        print("\n")
+    except AttributeError:
+        print("Unable to find the element, the structure of the website might have changed")
