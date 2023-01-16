@@ -2,9 +2,20 @@ import requests
 import json
 import pandas as pd
 import io
+from requests.utils import dict_from_cookiejar
+from bs4 import BeautifulSoup
+
+response = requests.get('https://bet.hu/oldalak/adatletoltes')
+cookie = dict_from_cookiejar(response.cookies)
+soup = BeautifulSoup(response.text, 'html.parser')
+meta_tag = soup.find('meta', attrs={'name': '_csrf'})
+csrf_token = meta_tag['content']
 
 
-url = "https://www.bet.hu/oldalak/adatletoltes/$rspid0x117390x12/$rihistoricalGenerator?_csrf=3b13429f-c797-42bf-a72b-00fb33d108da"
+jes = 'JSESSIONID='+ cookie['JSESSIONID'] +'; cookiesAcceptWarning=null'
+
+
+url = "https://www.bet.hu/oldalak/adatletoltes/$rspid0x117390x12/$rihistoricalGenerator?_csrf=" + csrf_token
 
 payload = json.dumps({
   "startingValue": "2022.12.16.",
@@ -12,7 +23,7 @@ payload = json.dumps({
   "resolution": "DAY_TO_DAY",
   "market": "PROMPT",
   "format": "CSV",
-  "type": "DETAILED",
+  "type": "OHLC",
   "currentCategory": "W_RESZVENYA",
   "selectionList": [
     {
@@ -31,7 +42,7 @@ headers = {
   'Accept-Language': 'hu-HU,hu;q=0.9,en-US;q=0.8,en;q=0.7',
   'Connection': 'keep-alive',
   'Content-type': 'application/json',
-  'Cookie': '_ga=GA1.2.331254811.1673780113; _gid=GA1.2.1995785858.1673780113; _fbp=fb.1.1673780112827.910819643; cookiesAcceptWarning=null; JSESSIONID=1816506C3D22CDC2AD34AA9A15838F62',
+  'Cookie': jes,
   'Origin': 'https://www.bet.hu',
   'Referer': 'https://www.bet.hu/',
   'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36'
@@ -44,10 +55,7 @@ if response.status_code == 200:
     csv_file = io.StringIO(csv_string)
     df = pd.read_csv(csv_file)
     data = df.to_dict("records")
+    print(data)
 
 else:
     print("Request failed with status code: {}".format(response.status_code))
-    
-
-print(data)
-
